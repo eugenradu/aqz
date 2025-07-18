@@ -11,6 +11,7 @@ erDiagram
     TEXT observatii
   }
 
+  %% Referință la produsul comercial existent în momentul plasării comenzii. Nu se creează duplicat.
   COMANDA_ITEM {
     UUID id
     UUID comanda_id
@@ -22,10 +23,12 @@ erDiagram
 
   %% Statusul loturilor de ofertă este gestionat prin FSM în OfertaService
   LOT_OFERTA {
+    UUID produs_comercial_id
+    %% Fiecare LotOferta face referire la un produs comercial propus într-o ofertă pentru un lot de procedură.
     UUID lot_procedura_id
   }
 
-  %% Legătura opțională cu ComandaItem permite trasabilitate completă în FSM
+  %% Legătura opțională cu ComandaItem permite trasabilitate completă între livrare și comanda inițială
   LIVRARE_ITEM {
     UUID comanda_item_id
   }

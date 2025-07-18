@@ -37,7 +37,7 @@ Această aplicație gestionează întregul flux de achiziții publice pentru mat
 - UM = unitate de lucru ireductibilă (ex: „reacție”, „test”, „litru”)
 - Cantitățile exprimate în aceste unități servesc ca bază pentru cerințe, comparații și raportări
   
-### ProdusComercial
+-### ProdusComercial
 - Reprezintă un produs oferit de un furnizor.
 - Conține o descriere text liber (ex: compoziție, aplicații, caracteristici comerciale)
 - Are UM comercială (ex: kit, flacon, cutie), diferită de UM-ul produsului generic.
@@ -52,6 +52,7 @@ Această aplicație gestionează întregul flux de achiziții publice pentru mat
 - În cadrul ofertelor, un `ProdusComercial` este referit prin `OfertaItem`, care include furnizorul, prețul, cantitatea și termenul de livrare.
 - Poate apărea în oferte multiple, fie pentru un referat informal, fie într-o procedură formală.
 - Aceeași ofertă poate include produse comerciale de la mai mulți furnizori pentru același produs generic.
+- La introducerea unei oferte, dacă `ProdusComercial` există deja (identificat prin `cod_catalog`, `producator` și, opțional, `ambalare`), acesta este reutilizat. În acest caz, `OfertaItem` va face referință la produsul existent și va conține detalii comerciale specifice ofertei curente (ex: preț, UM, termen livrare). Dacă produsul nu există, este creat automat. Se poate actualiza parțial metadatele produsului dacă sunt mai complete decât cele existente.
 
 ### Furnizor
 - Entitate juridică care oferă produse comerciale.
@@ -84,7 +85,9 @@ Această aplicație gestionează întregul flux de achiziții publice pentru mat
   - moneda (`RON`, `EUR`, etc.)
   - link la fișierul original (upload sau link GDrive)
 - La introducerea unei oferte se permite:
-  - crearea unui `ProdusComercial` dacă acesta nu există deja
+  - verificarea existenței unui `ProdusComercial` (după cod_catalog + producător + ambalare opțional) și:
+      - reutilizarea lui dacă există, cu adăugarea detaliilor comerciale în OfertaItem
+      - crearea unui produs nou dacă nu există
   - asocierea unui `ProdusComercial` cu un `ProdusGeneric` prin echivalență
 - Status ofertă (`status`): `inregistrata`, `in analiza`, `respinsa`, `selectata`, `castigatoare`
 - Data transmiterii ofertei (`data_transmitere`), separată de data înregistrării.

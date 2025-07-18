@@ -40,6 +40,7 @@
 2. [ ] Înregistrare oferte comerciale (cu validare echivalență UM comercială ↔ UM cerută, conversie UM)
 2.1 [ ] Adăugare produs comercial direct, cu sau fără asociere la produs generic
 2.2 [ ] Implementare completă `OfertaItem` (conține legătura produs generic ↔ produs comercial + detalii ofertă)
+2.3 [ ] La introducerea unei oferte noi, dacă produsul comercial există deja în baza de date (pe baza codului și producătorului), atunci va fi reutilizat. Se vor actualiza doar detaliile comerciale relevante (preț, UM, ambalare, valabilitate). În caz contrar, produsul comercial va fi creat.
 3. [ ] Legare oferte la produse comerciale și loturi
 3.1 [ ] Script de import JSON în backend pentru produse generice (raportează erorile într-un fișier log) – UI avansat amânat după MVP
 3.2 [ ] Înregistrare ofertă independentă (fără legătură directă cu referat sau procedură)
@@ -163,6 +164,9 @@ Orice modificare de logică, flux sau model va impune:
   - `erd.mmd` – adăugată entitate STATUS_LOG
   - `TODO.md` – adăugat obiectiv privind jurnalizarea tranzițiilor de status
   - `logica.md` – completat cu detalii despre gestionarea documentelor prin serviciu dedicat
+  - `logica.md` – completat cu detalii privind reutilizarea produselor comerciale la introducerea unei oferte
+  - `erd.mmd` – actualizat cu relațiile și logica de reutilizare produse comerciale în ofertare
+  - `TODO.md` – obiectiv intermediar privind logica de reutilizare produs comercial
 - [ ] 🔖 Marcare commit cu `checkpoint: nume_modificare`
 - [ ] 🗂 Commit în GitHub cu mesaj explicit: `update logică + ERD`
 
