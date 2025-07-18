@@ -1,0 +1,9 @@
+[project]
+name = "aqz"
+version = "0.1.0"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "python-dotenv"
+]
+requires-python = ">=3.11"

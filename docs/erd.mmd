@@ -1,0 +1,139 @@
+erDiagram
+
+  REFERAT ||--o{ CERERE_PRODUS_GENERIC : contine
+  REFERAT ||--o{ LOT_REFERAT : grupeaza
+  LOT_REFERAT ||--o{ CERERE_PRODUS_GENERIC : contine
+
+  CERERE_PRODUS_GENERIC }o--|| PRODUS_GENERIC : specifica
+  PRODUS_GENERIC }o--o{ PRODUS_COMERCIAL : este_acoperit_de
+
+  REFERAT }o--|| UTILIZATOR : creat_de
+  REFERAT ||--o{ DOCUMENT : atasament
+
+  OFERTA ||--o{ OFERTA_ITEM : contine
+  OFERTA_ITEM }o--|| PRODUS_COMERCIAL : propune
+  OFERTA_ITEM }o--|| LOT_OFERTA : pentru_lot
+  LOT_OFERTA }o--|| OFERTA : parte_din
+
+  OFERTA }o--|| FURNIZOR : transmisa_de
+
+  PROCEDURA ||--o{ LOT_PROCEDURA : compusa_din
+  LOT_PROCEDURA ||--o{ CERERE_PRODUS_GENERIC : include
+  LOT_PROCEDURA }o--|| PROCEDURA : apartine
+  LOT_PROCEDURA }o--|| OFERTA : atribuita_la
+
+  CONTRACT }o--|| FURNIZOR : semnat_cu
+  CONTRACT }o--|| PROCEDURA : rezultat_din
+  CONTRACT ||--o{ COMANDA : include
+
+  COMANDA ||--o{ COMANDA_PRODUS : contine
+  COMANDA_PRODUS }o--|| PRODUS_COMERCIAL : comanda_pentru
+
+  LIVRARE ||--o{ LIVRARE_ITEM : contine
+  LIVRARE_ITEM }o--|| COMANDA_PRODUS : raspunde_la
+  LIVRARE }o--|| COMANDA : parte_din
+
+  UTILIZATOR {
+    string id PK
+    string nume
+    string email
+  }
+
+  REFERAT {
+    string id PK
+    string titlu
+    string status
+    datetime data_creare
+    datetime data_aprobare
+  }
+
+  CERERE_PRODUS_GENERIC {
+    string id PK
+    float cant_minima
+    float cant_maxima
+  }
+
+  PRODUS_GENERIC {
+    string id PK
+    string nume
+    string specificatii
+    string categorie
+  }
+
+  PRODUS_COMERCIAL {
+    string id PK
+    string nume
+    string cod_catalog
+    string producator
+    string ambalare
+  }
+
+  FURNIZOR {
+    string id PK
+    string denumire
+    string cif
+    string email
+  }
+
+  OFERTA {
+    string id PK
+    datetime data_inregistrare
+    string tip
+  }
+
+  OFERTA_ITEM {
+    string id PK
+    float pret_unitar
+    float cantitate
+  }
+
+  PROCEDURA {
+    string id PK
+    string tip
+    string status
+    datetime data_publicare
+  }
+
+  LOT_PROCEDURA {
+    string id PK
+    string denumire
+    string descriere
+  }
+
+  CONTRACT {
+    string id PK
+    string tip
+    datetime data_semnare
+    date data_expirare
+  }
+
+  COMANDA {
+    string id PK
+    datetime data_emiterii
+    string status
+  }
+
+  COMANDA_PRODUS {
+    string id PK
+    float cantitate
+  }
+
+  LIVRARE {
+    string id PK
+    datetime data_livrare
+    string numar_factura
+    string numar_aviz
+  }
+
+  LIVRARE_ITEM {
+    string id PK
+    float cantitate_livrata
+    string observatii
+  }
+
+  DOCUMENT {
+    string id PK
+    string tip
+    string cale_fisier
+    datetime data_upload
+  }
