@@ -92,6 +92,7 @@ Această aplicație gestionează întregul flux de achiziții publice pentru mat
 - Flag boolean `este_completa` definit pe `LotOferta`, care indică dacă toate produsele din `LotProcedura` au fost acoperite.
 - Valoarea totală a ofertei și pe lot este calculată dinamic (nu stocată).
 - Suport pentru atașamente multiple: entitate `OfertaDocument`, fiecare cu `nume`, `tip`, `link`.
+- - Pentru gestionarea stărilor complexe ale ofertelor (`inregistrata`, `in analiza`, `respinsa`, `selectata`, `castigatoare`), se recomandă folosirea unui sistem de tip **Finite State Machine (FSM)**. Tranzițiile valide vor fi definite explicit într-un serviciu dedicat (`OfertaService`), pentru a evita logica dispersată în view-uri sau modele.
 
 ### ProceduraAchizitie
 - Grup de loturi oficiale (`LotProcedura`) definite pentru achiziție.
@@ -105,7 +106,7 @@ Această aplicație gestionează întregul flux de achiziții publice pentru mat
 - Pot conține produse din mai multe referate și/sau loturi interne.
 - Sunt unități oficiale de ofertare și atribuire.
 
-### Contract
+-### Contract
 - Reprezintă acordul juridic semnat cu furnizorul pentru furnizarea produselor atribuite.
 - Este rezultatul atribuirii unuia sau mai multor loturi dintr-o procedură.
 - Tipuri:
@@ -120,9 +121,11 @@ Această aplicație gestionează întregul flux de achiziții publice pentru mat
   - `valabil_de_la` / `valabil_pana`
   - `status` (ex: `activ`, `expirat`, `reziliat`)
   - `tip_procedura`: `achizitie_directa`, `negociere_SEAP`, `licitatie_deschisa`
+- Pentru gestionarea tranzițiilor de status (`activ`, `expirat`, `reziliat`) se va aplica același principiu FSM, cu reguli implementate în `ContractService`.
 - Se poate referi la mai multe `LotProcedura` atribuite aceluiași furnizor.
 - Fiecare legătură contract-lot permite calculul valorii pe lot.
 - Număr și dată de înregistrare sunt comune cu celelalte documente și pot lipsi temporar.
+- Contractele pot avea atașamente multiple salvate în entitatea `Document`, inclusiv fișiere scanate (PDF, DOCX).
 
 ### ComandaSubsecventa
 - Contract subsecvent emis în baza unui `Contract` de tip `acord_cadru`.
@@ -146,9 +149,12 @@ Această aplicație gestionează întregul flux de achiziții publice pentru mat
 - Permite trasabilitate completă: `ComandaSubsecventa` → `Contract` → `LotProcedura` → `Oferta` → `ProdusGeneric`
 
 ### Comanda
-- Fermă sau subsecventă.
-- Conține produse comerciale și cantități.
-- Poate fi livrată în una sau mai multe tranșe.
+
+- Instanță de comandă de produse, fie ca urmare a unui contract ferm, fie ca subsecventă în cadrul unui acord-cadru.
+- Implementată unitar prin `ComandaSubsecventa`.
+- Comenzile ferme sunt generate automat la semnarea unui `Contract` de tip `contract_ferm`.
+- Comenzile subsecvente sunt create manual pentru `acord_cadru`.
+- Fiecare comandă este asociată unui `Contract` și conține produse comerciale, cantități, prețuri și un document justificativ (link sau fișier).
 
 ### Livrare
 - Confirmare a onorării unei comenzi (fermă sau subsecventă).
@@ -159,6 +165,7 @@ Această aplicație gestionează întregul flux de achiziții publice pentru mat
 - Poate include unul sau mai multe produse (`LivrareItem[]`), fiecare cu:
   - `produs_comercial_id`, `cantitate_livrata`
   - opțional: `pret_unitar`, `data_expirare`, `lot_fabricatie`
+  - opțional: `comanda_item_id` – referință la linia de comandă corespunzătoare, pentru trasabilitate completă.
 - Poate avea atașamente (`LivrareDocument[]`) de tip:
   - `factura`, `aviz`, `altul`, cu nume și link
 - Se pot vizualiza/filtra livrările:
@@ -166,16 +173,27 @@ Această aplicație gestionează întregul flux de achiziții publice pentru mat
 - Integrare cu aplicația de gestiune stocuri:
   - livrările valide pot fi trimise automat sub formă de webhook
   - sau expuse prin API (`GET /livrari`) pentru sincronizare externă
+- Se verifică dacă întreaga comandă a fost onorată
+- Validări:
+  - o livrare nu poate depăși cantitățile rămase neonorate din comandă
+  - o comandă este considerată complet livrată dacă toate produsele comandate au fost livrate integral
+
 
 ### Document
 - Poate fi atașat la orice entitate.
 - Tipuri: PDF, Word, Excel, GDocs.
+  Pot fi fișiere urcate direct în aplicație (upload local) sau linkuri către surse externe (ex: Google Drive). Sistemul va permite descărcarea și previzualizarea acestor fișiere, cu organizare pe entități.
 - Origine: generare automată, upload, link extern.
 - Pentru ofertele încărcate, se recomandă fie upload direct, fie integrare cu Google Drive.
+- Fișierele pot fi stocate local (upload direct în aplicație, compatibil S3) sau atașate ca linkuri externe.
+- Setarea de stocare se poate configura global în aplicație.
 - Structura recomandată pentru GDrive: `/Aqz/Ofertare/[nume_furnizor]/[data_oferta].pdf`
 - Documentele asociate cu `Oferta` vor fi evidențiate în interfață și disponibile pentru descărcare/verificare.
-- Pentru suportul de atașamente multiple, ofertele vor avea o entitate dedicată `OfertaDocument`.
+- Pentru suportul de atașamente multiple, fiecare entitate care acceptă atașamente va avea o entitate dedicată de tip `[Entitate]Document` (ex: `OfertaDocument`, `ContractDocument`, `LivrareDocument`), cu nume, tip și link.
 - Aceasta permite asocierea mai multor fișiere (PDF, Excel etc.) cu o ofertă.
+- Documentele pot fi asociate și cu livrări (`LivrareDocument`), comenzi (`ComandaDocument`), contracte (`ContractDocument`), și referate (`ReferatDocument`), pe lângă oferte.
+
+Pentru a asigura o gestiune unitară a documentelor în aplicație, logica de încărcare (upload local/S3 sau atașare prin link extern), asociere cu alte entități și generare de linkuri securizate va fi implementată într-un serviciu dedicat `DocumentService`. Acest serviciu centralizat evită duplicarea codului și permite aplicarea unor politici uniforme de validare, denumire fișiere, permisiuni și generare de URL-uri securizate.
 
 ### Înregistrare documente
 - Toate entitățile de tip document (`Referat`, `Oferta`, `Contract`, `Comanda`, etc.) au câmpuri:
@@ -215,6 +233,13 @@ Pentru a facilita introducerea rapidă a produselor generice în sistem, aplica�
 - Produsele deja existente în sistem (după `nume_generic` + `categorie`) nu sunt importate automat — utilizatorul este informat și decide asupra acțiunii.
 - Pentru fiecare produs importat cu succes, sistemul generează automat un cod unic (`cod`) pe baza categoriei (ex: `PT001` pentru „PCR tumori”).
 
+### (Extensibil) Import produse comerciale
+
+- Aplicația poate fi extinsă pentru a importa și produse comerciale din fișiere JSON structurate.
+- Importul ar trebui să conțină:
+  - `nume_comercial`, `producator`, `cod_catalog`, `ambalare`, `um_comerciala`, `valoare_ambalaj`, `um_referinta`
+- Opțional se poate asocia automat cu produse generice existente (pe baza codificării sau descrierii).
+
 #### Interfață utilizator
 
 - Formular pentru încărcarea fișierului JSON
@@ -252,6 +277,9 @@ Pentru a facilita introducerea rapidă a produselor generice în sistem, aplica�
 - Furnizorul trimite aviz și factură
 - Se înregistrează livrarea
 - Se verifică dacă întreaga comandă a fost onorată
+- Validări:
+  - o livrare nu poate depăși cantitățile rămase neonorate din comandă
+  - o comandă este considerată complet livrată dacă toate produsele comandate au fost livrate integral
 
 ### 6. Integrare stocuri (modul viitor)
 - După livrare, se creează automat o `IntrareStoc`
@@ -282,6 +310,7 @@ Pentru a facilita introducerea rapidă a produselor generice în sistem, aplica�
 - Ofertele fără asociere la referat sau procedură sunt permise, dar marcate ca "informale".
 - O ofertă de procedură trebuie să acopere complet cel puțin un `LotProcedura` (`este_completa` = true).
 - Nu este permisă marcarea manuală a unei oferte ca "câștigătoare" fără completitudinea pe lot.
+- Tranzițiile de stare pentru entități precum `Oferta`, `Contract`, `Referat` vor fi validate folosind FSM (Finite State Machine). Acest mecanism clarifică ce stări sunt permise și ce acțiuni le pot declanșa. De exemplu, o ofertă nu poate fi marcată „câștigătoare” dacă nu a fost mai întâi „selectată” și completă pe lot.
 
 ---
 
@@ -289,7 +318,34 @@ Pentru a facilita introducerea rapidă a produselor generice în sistem, aplica�
 
 - Rol unic cu acces complet.
 - Autentificare JWT via FastAPI Users.
-- Jurnalizare opțională a acțiunilor (`AuditLog`).
+- Jurnalizare opțională a acțiunilor (`AuditLog`):
+  - modificări asupra referatelor, ofertelor, contractelor
+  - selecții de oferte, ștergeri, adăugiri, actualizări de status
+  - emitere comenzi, înregistrare livrări
+  - autentificare utilizator, modificări de fișiere/documente
+  - Fiecare acțiune jurnalizată include: utilizatorul, tipul acțiunii, entitatea afectată, ID-ul acesteia, data/ora și opțional detalii text.
+
+### 🧾 Jurnalizare a tranzițiilor de status
+
+Pentru a asigura trasabilitatea completă a ciclului de viață al documentelor (referate, oferte, proceduri, contracte etc.), se introduce o entitate suplimentară dedicată:
+
+StatusLog
+• Înregistrează exclusiv tranzițiile de status ale entităților relevante.
+• Complementară față de AuditLog, care înregistrează toate tipurile de acțiuni.
+• Câmpuri:
+• entitate: numele entității afectate (ex: Oferta, Contract, Referat)
+• entitate_id: identificatorul instanței respective
+• status_vechi: valoarea statusului anterior (ex: in analiza)
+• status_nou: valoarea statusului nou (ex: castigatoare)
+• utilizator_id: cine a inițiat tranziția
+• data_ora: momentul exact al tranziției
+
+Beneficii:
+• Permite auditarea clară a momentelor și utilizatorilor implicați în modificarea statusurilor.
+• Suport pentru generare de rapoarte (ex: durata medie între in analiza și castigatoare)
+• Util în contextul respectării legislației privind trasabilitatea deciziilor în achiziții publice.
+
+În OfertaService, ContractService etc., la fiecare modificare de status validă prin FSM, se va crea automat un StatusLog corespunzător.
 
 ---
 
@@ -300,3 +356,38 @@ Pentru a facilita introducerea rapidă a produselor generice în sistem, aplica�
   - `activitate.mmd` – când se schimbă fluxurile
   - `TODO.md` – când se redefinește strategia
 - Acest fișier conține toate detaliile logice necesare pentru a relua dezvoltarea aplicației în caz de pierdere de context. Sincronizarea sa cu restul documentației este esențială.
+### AuditLog
+- Înregistrează acțiunile utilizatorilor asupra entităților aplicației.
+- Câmpuri:
+  - `utilizator_id`
+  - `actiune` (ex: `modificare_referat`, `adaugare_oferta`, `actualizare_status`)
+  - `entitate` (ex: `Referat`, `Oferta`)
+  - `entitate_id`
+  - `data_ora`
+  - `detalii` (opțional)
+
+- Este utilizat pentru trasabilitate, debugging și eventual audit extern.
+
+---
+
+## 🧭 Principii arhitecturale (Design Guidelines)
+
+- **Separarea logicii de business de modelele de date:**
+  - Modelele ORM (SQLAlchemy) și cele Pydantic (schema de input/output) vor fi păstrate **cât mai simple**, fără logică de validare complexă sau tranziții de status în ele.
+  - Toată logica de validare, modificare a statusurilor, generare de documente, reguli de tranzacție etc. va fi implementată în **servicii dedicate**, cum ar fi:
+    - `OfertaService`
+    - `ContractService`
+    - `ReferatService`
+    - `LivrareService`
+    - etc.
+
+- **Responsabilități clar definite:**
+  - Serviciile de tip `Service` vor expune metode cu semnătură clară (ex: `selecteaza_oferta`, `genereaza_contract`, `inregistreaza_livrare`)
+  - Acestea vor funcționa ca o interfață logică între controller (FastAPI route handler) și stratul de date (repository / ORM).
+  - Codul din `routes/` va fi redus la apeluri către aceste servicii și returnarea răspunsurilor către client (UI/API).
+
+- **Validările importante (business logic) vor fi centralizate:**
+  - Exemplu: regula conform căreia o ofertă nu poate fi marcată drept „câștigătoare” dacă nu este completă pe lot (`este_completa == False`) va fi implementată **strict în `OfertaService`**, niciodată în controller sau direct în ORM.
+  - - Pentru entitățile cu stări multiple și tranziții bine definite, se va implementa un **sistem FSM simplificat**, bazat pe un dicționar central cu stările posibile și tranzițiile permise. Acesta va fi utilizat exclusiv în serviciile logice (`OfertaService`, `ContractService`, etc.), nu în modelele ORM sau în rutele FastAPI.
+
+- **Documentele generate vor fi declanșate doar din servicii**, nu din view-uri, nu automat la schimbarea statusului unui model.
