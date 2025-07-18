@@ -25,7 +25,7 @@ aqz/
 ├── README.md
 └── docs/                 # Documentație sistem
     ├── erd.mmd
-    ├── activitate.mmd
+    ├── activitate_old.mmd      # diagramă veche de activitate (arhivată)
     ├── logica.md
     └── TODO.md
 ```
@@ -56,7 +56,7 @@ uvicorn main:app --reload
 ## ✅ Documentație cheie
 
 - `erd.mmd`: diagrama logică (entități, relații)
-- `activitate.mmd`: flux de activitate achiziție
+- `activitate_old.mmd`: diagramă de activitate arhivată – nu se mai actualizează
 - `logica.md`: descriere logică completă a aplicației
 - `TODO.md`: strategia și obiectivele de dezvoltare
 
@@ -68,3 +68,11 @@ uvicorn main:app --reload
 - Metodă: push GitHub → Coolify auto-deploy (Docker Compose)
 
 ---
+
+## 🗃️ Notă despre documentația activităților
+
+Fișierul `activitate.mmd` a fost arhivat ca `activitate_old.mmd` pentru a simplifica întreținerea documentației. Documentația activă este acum formată din:
+
+- `logica.md` – descriere completă a entităților și proceselor
+- `erd.mmd` – diagrama logică a bazei de date
+- `TODO.md` – obiective și stadiul dezvoltării

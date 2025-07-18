@@ -6,7 +6,11 @@ start([Start proces achiziție])
 start --> redactareReferat
 
 redactareReferat[Redactare referat de necesitate - draft]
-redactareReferat --> validareReferat
+redactareReferat --> definireLoturiReferat
+definireLoturiReferat[Definire loturi interne (LotReferat)]
+definireLoturiReferat --> asociereProduseComercialeCunoscute
+asociereProduseComercialeCunoscute[Asociere produse comerciale cunoscute la produse generice]
+asociereProduseComercialeCunoscute --> validareReferat
 validareReferat[Validare internă referat]
 validareReferat --> trimiteSpreAprobare
 
@@ -25,14 +29,18 @@ alegereTipProcedura --> creareProcedura
 creareProcedura[Creare procedură achiziție]
 creareProcedura --> definireLoturiProcedura
 
-definireLoturiProcedura[Definire loturi procedură - poate agrega produse din mai multe referate]
+definireLoturiProcedura[Definire loturi procedură (LotProcedura) - pot agrega produse din mai multe referate și/sau loturi interne]
 definireLoturiProcedura --> publicareProcedura
 
 publicareProcedura[Publicare procedură / inițiere ofertare]
 publicareProcedura --> receptionareOferte
 
 receptionareOferte[Înregistrare oferte comerciale de la furnizori]
-receptionareOferte --> evaluareOferte
+receptionareOferte --> inregistrareProduseComercialeNoi
+inregistrareProduseComercialeNoi[Înregistrare produse comerciale noi din ofertă]
+inregistrareProduseComercialeNoi --> validareConversiiUM
+validareConversiiUM[Validare echivalență între UM comercială și UM cerută]
+validareConversiiUM --> evaluareOferte
 
 evaluareOferte[Evaluare oferte per lot]
 evaluareOferte --> selectieCastigator
@@ -61,7 +69,7 @@ emitereComanda[Emitere comandă + transmitere furnizor]
 
 emitereComanda --> receptionareLivrare
 
-receptionareLivrare[Recepție produse: factură, aviz, cantitate]
+receptionareLivrare[Recepție produse: factură, aviz, cantitate (convertită în UM de lucru)]
 receptionareLivrare --> inregistrareLivrare
 
 inregistrareLivrare[Înregistrare livrare în sistem]
