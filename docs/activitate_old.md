@@ -1,3 +1,6 @@
+# Schema activităților
+
+```mermaid
 flowchart TD
 
 %% ============ INIȚIERE REFERAT ============
@@ -7,7 +10,7 @@ start --> redactareReferat
 
 redactareReferat[Redactare referat de necesitate - draft]
 redactareReferat --> definireLoturiReferat
-definireLoturiReferat[Definire loturi interne (LotReferat)]
+definireLoturiReferat[Definire loturi interne - LotReferat]
 definireLoturiReferat --> asociereProduseComercialeCunoscute
 asociereProduseComercialeCunoscute[Asociere produse comerciale cunoscute la produse generice]
 asociereProduseComercialeCunoscute --> validareReferat
@@ -29,7 +32,7 @@ alegereTipProcedura --> creareProcedura
 creareProcedura[Creare procedură achiziție]
 creareProcedura --> definireLoturiProcedura
 
-definireLoturiProcedura[Definire loturi procedură (LotProcedura) - pot agrega produse din mai multe referate și/sau loturi interne]
+definireLoturiProcedura[Definire loturi procedură - LotProcedura - pot agrega produse din mai multe referate și/sau loturi interne]
 definireLoturiProcedura --> publicareProcedura
 
 publicareProcedura[Publicare procedură / inițiere ofertare]
@@ -69,7 +72,7 @@ emitereComanda[Emitere comandă + transmitere furnizor]
 
 emitereComanda --> receptionareLivrare
 
-receptionareLivrare[Recepție produse: factură, aviz, cantitate (convertită în UM de lucru)]
+receptionareLivrare[Recepție produse: factură, aviz, cantitate convertită în UM de lucru]
 receptionareLivrare --> inregistrareLivrare
 
 inregistrareLivrare[Înregistrare livrare în sistem]
@@ -91,3 +94,4 @@ creareIntrareStoc[Creare intrare în modulul de gestiune stocuri - în viitor]
 creareIntrareStoc --> stop
 
 stop([Sfârșit proces achiziție])
+```
