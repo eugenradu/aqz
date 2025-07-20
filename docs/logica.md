@@ -190,13 +190,12 @@ Această aplicație gestionează întregul flux de achiziții publice pentru mat
 - Pentru ofertele încărcate, se recomandă fie upload direct, fie integrare cu Google Drive.
 - Fișierele pot fi stocate local (upload direct în aplicație, compatibil S3) sau atașate ca linkuri externe.
 - Setarea de stocare se poate configura global în aplicație.
-- Structura recomandată pentru GDrive: `/Aqz/Ofertare/[nume_furnizor]/[data_oferta].pdf`
 - Documentele asociate cu `Oferta` vor fi evidențiate în interfață și disponibile pentru descărcare/verificare.
 - Pentru suportul de atașamente multiple, fiecare entitate care acceptă atașamente va avea o entitate dedicată de tip `[Entitate]Document` (ex: `OfertaDocument`, `ContractDocument`, `LivrareDocument`), cu nume, tip și link.
 - Aceasta permite asocierea mai multor fișiere (PDF, Excel etc.) cu o ofertă.
 - Documentele pot fi asociate și cu livrări (`LivrareDocument`), comenzi (`ComandaDocument`), contracte (`ContractDocument`), și referate (`ReferatDocument`), pe lângă oferte.
 
-Pentru a asigura o gestiune unitară a documentelor în aplicație, logica de încărcare (upload local/S3 sau atașare prin link extern), asociere cu alte entități și generare de linkuri securizate va fi implementată într-un serviciu dedicat `DocumentService`. Acest serviciu centralizat evită duplicarea codului și permite aplicarea unor politici uniforme de validare, denumire fișiere, permisiuni și generare de URL-uri securizate.
+Pentru a asigura o gestiune unitară a documentelor în aplicație, logica de încărcare (upload local/S3 sau atașare prin link extern), asociere cu alte entități și generare de linkuri securizate va fi implementată într-un modul dedicat `DocumentService`. Acest serviciu centralizat evită duplicarea codului și permite aplicarea unor politici uniforme de validare, denumire fișiere, permisiuni și generare de URL-uri securizate.
 
 ### Înregistrare documente
 - Toate entitățile de tip document (`Referat`, `Oferta`, `Contract`, `Comanda`, etc.) au câmpuri:
@@ -208,7 +207,9 @@ Pentru a asigura o gestiune unitară a documentelor în aplicație, logica de î
 - Reprezintă o instanță contextuală a unui produs comercial oferit de un anumit furnizor.
 - Include codul de catalog al furnizorului, eventualele variații de ambalaj și termenul de livrare tipic.
 
-### Import produse generice din fișiere JSON
+## 🔄 Fluxuri principale
+
+### 0. Import produse generice din fișiere JSON
 
 Pentru a facilita introducerea rapidă a produselor generice în sistem, aplicația suportă importul acestora din fișiere JSON. Acest mecanism este util pentru preluarea datelor existente din surse istorice (ex: Google Docs).
 
@@ -236,7 +237,7 @@ Pentru a facilita introducerea rapidă a produselor generice în sistem, aplica�
 - Produsele deja existente în sistem (după `nume_generic` + `categorie`) nu sunt importate automat — utilizatorul este informat și decide asupra acțiunii.
 - Pentru fiecare produs importat cu succes, sistemul generează automat un cod unic (`cod`) pe baza categoriei (ex: `PT001` pentru „PCR tumori”).
 
-### (Extensibil) Import produse comerciale
+#### (Extensibil) Import produse comerciale
 
 - Aplicația poate fi extinsă pentru a importa și produse comerciale din fișiere JSON structurate.
 - Importul ar trebui să conțină:
@@ -251,11 +252,7 @@ Pentru a facilita introducerea rapidă a produselor generice în sistem, aplica�
   - ⚠️ Produse respinse (cu motiv)
   - ✏️ Posibilitate de completare manuală a câmpurilor lipsă
 - Confirmare explicită pentru adăugarea de categorii sau unități de măsură noi
-
----
-
-## 🔄 Fluxuri principale
-
+  
 ### 1. Inițiere referat
 - Redactare `Referat` cu produse (`CerereProdusGeneric`)
 - Aprobare formală
@@ -291,13 +288,13 @@ Pentru a facilita introducerea rapidă a produselor generice în sistem, aplica�
 
 ## 📤 Documente generate
 
-| Document              | Format    | Legat de         | Generare         |
-|-----------------------|-----------|------------------|------------------|
-| Referat necesitate    | PDF, GDocs| Referat          | Jinja2, Docs API |
-| Centralizator ofertă  | PDF       | Procedură        | WeasyPrint       |
-| Contract achiziție    | DOCX, PDF | Contract         | python-docx      |
-| Comandă furnizor      | PDF       | Comanda          | Jinja2, PDF      |
-| Recepție livrare      | PDF       | Livrare          | Jinja2, CSV      |
+| Document             | Format     | Legat de  | Generare         |
+| -------------------- | ---------- | --------- | ---------------- |
+| Referat necesitate   | PDF, GDocs | Referat   | Jinja2, Docs API |
+| Centralizator ofertă | PDF        | Procedură | WeasyPrint       |
+| Contract achiziție   | DOCX, PDF  | Contract  | python-docx      |
+| Comandă furnizor     | PDF        | Comanda   | Jinja2, PDF      |
+| Recepție livrare     | PDF        | Livrare   | Jinja2, CSV      |
 
 ---
 
@@ -320,7 +317,7 @@ Pentru a facilita introducerea rapidă a produselor generice în sistem, aplica�
 ## 🔐 Autentificare și audit
 
 - Rol unic cu acces complet.
-- Autentificare JWT via FastAPI Users.
+- Autentificare
 - Jurnalizare opțională a acțiunilor (`AuditLog`):
   - modificări asupra referatelor, ofertelor, contractelor
   - selecții de oferte, ștergeri, adăugiri, actualizări de status
@@ -328,7 +325,7 @@ Pentru a facilita introducerea rapidă a produselor generice în sistem, aplica�
   - autentificare utilizator, modificări de fișiere/documente
   - Fiecare acțiune jurnalizată include: utilizatorul, tipul acțiunii, entitatea afectată, ID-ul acesteia, data/ora și opțional detalii text.
 
-### 🧾 Jurnalizare a tranzițiilor de status
+## 🧾 Opțional: Jurnalizare a tranzițiilor de status
 
 Pentru a asigura trasabilitatea completă a ciclului de viață al documentelor (referate, oferte, proceduri, contracte etc.), se introduce o entitate suplimentară dedicată:
 
@@ -350,7 +347,34 @@ Beneficii:
 
 În OfertaService, ContractService etc., la fiecare modificare de status validă prin FSM, se va crea automat un StatusLog corespunzător.
 
----
+## 🧭 Principii arhitecturale (Design Guidelines)
+
+Aceste principii ghidează dezvoltarea tehnică a aplicației pentru a asigura claritate, mentenabilitate și robustețe în contextul arhitecturii Supabase + SvelteKit.
+
+1.  **Baza de Date este Sursa Adevărului (Single Source of Truth).**
+    * **Descriere:** Logica de business critică, regulile de integritate și securitatea datelor sunt implementate cât mai aproape de date, în stratul PostgreSQL al Supabase.
+    * **Implementare:**
+        * **Securitate:** Accesul la date este controlat granular prin politici de **Row Level Security (RLS)**. Frontend-ul nu poate accesa niciodată date la care utilizatorul nu are dreptul, chiar dacă încearcă să o facă.
+        * **Integritate:** Validările care trebuie să fie atomice și necondiționate (ex: o livrare nu poate depăși cantitatea comandată) se implementează prin **Funcții și Triggere PostgreSQL**.
+        * **Audit:** Jurnalizarea acțiunilor în tabela `AuditLog` se automatizează prin **Triggere PostgreSQL** pe tabelele de interes (`Referat`, `Oferta`, etc.).
+
+2.  **Frontend-ul (SvelteKit) este pentru Prezentare și Interacțiune.**
+    * **Descriere:** Interfața SvelteKit este responsabilă exclusiv pentru afișarea datelor într-un mod prietenos și pentru colectarea input-ului de la utilizator.
+    * **Implementare:**
+        * **Regulă:** Logica de business complexă (ex: ce se întâmplă când un referat este aprobat) **NU** se implementează în frontend. Componentele SvelteKit doar invocă funcțiile corespunzătoare din backend.
+        * **Comunicare:** Interacțiunea cu backend-ul se face **doar** prin clientul JavaScript Supabase, care apelează API-ul postgREST sau Edge Functions.
+
+3.  **Logica Complexă se Izolează în Edge Functions.**
+    * **Descriere:** Orice proces care necesită orchestrarea mai multor pași, interacțiunea cu servicii externe sau care este intensiv din punct de vedere computațional, se extrage într-o **Supabase Edge Function**.
+    * **Implementare:**
+        * **Exemple:** Generarea unui PDF de contract, procesarea unui import de produse dintr-un fișier JSON, trimiterea unei notificări prin email la aprobarea unei oferte, integrarea cu alte API-uri (ex: webhook pentru gestiunea stocurilor).
+        * **Beneficiu:** Menține frontend-ul rapid și responsiv, iar logica de business este centralizată, testabilă și securizată.
+
+4.  **Dezvoltare bazată pe Migrații (Migration-first).**
+    * **Descriere:** Orice modificare a schemei bazei de date (creare/modificare tabele, funcții, triggere, politici RLS) se realizează **exclusiv** prin fișiere de migrație SQL.
+    * **Implementare:**
+        * **Unealtă:** Se folosește **Supabase CLI** pentru a genera și aplica migrațiile (`supabase db diff`, `supabase db reset`).
+        * **Beneficiu:** Asigură un istoric clar al modificărilor, permite refacerea bazei de date în orice moment și face ca procesul de deploy în producție să fie sigur și reproductibil. Modificările direct din interfața Supabase Studio sunt interzise în fluxul de lucru.
 
 ## 🔄 Note finale
 
@@ -359,38 +383,3 @@ Beneficii:
   - `activitate.mmd` – când se schimbă fluxurile
   - `TODO.md` – când se redefinește strategia
 - Acest fișier conține toate detaliile logice necesare pentru a relua dezvoltarea aplicației în caz de pierdere de context. Sincronizarea sa cu restul documentației este esențială.
-### AuditLog
-- Înregistrează acțiunile utilizatorilor asupra entităților aplicației.
-- Câmpuri:
-  - `utilizator_id`
-  - `actiune` (ex: `modificare_referat`, `adaugare_oferta`, `actualizare_status`)
-  - `entitate` (ex: `Referat`, `Oferta`)
-  - `entitate_id`
-  - `data_ora`
-  - `detalii` (opțional)
-
-- Este utilizat pentru trasabilitate, debugging și eventual audit extern.
-
----
-
-## 🧭 Principii arhitecturale (Design Guidelines)
-
-- **Separarea logicii de business de modelele de date:**
-  - Modelele ORM (SQLAlchemy) și cele Pydantic (schema de input/output) vor fi păstrate **cât mai simple**, fără logică de validare complexă sau tranziții de status în ele.
-  - Toată logica de validare, modificare a statusurilor, generare de documente, reguli de tranzacție etc. va fi implementată în **servicii dedicate**, cum ar fi:
-    - `OfertaService`
-    - `ContractService`
-    - `ReferatService`
-    - `LivrareService`
-    - etc.
-
-- **Responsabilități clar definite:**
-  - Serviciile de tip `Service` vor expune metode cu semnătură clară (ex: `selecteaza_oferta`, `genereaza_contract`, `inregistreaza_livrare`)
-  - Acestea vor funcționa ca o interfață logică între controller (FastAPI route handler) și stratul de date (repository / ORM).
-  - Codul din `routes/` va fi redus la apeluri către aceste servicii și returnarea răspunsurilor către client (UI/API).
-
-- **Validările importante (business logic) vor fi centralizate:**
-  - Exemplu: regula conform căreia o ofertă nu poate fi marcată drept „câștigătoare” dacă nu este completă pe lot (`este_completa == False`) va fi implementată **strict în `OfertaService`**, niciodată în controller sau direct în ORM.
-  - - Pentru entitățile cu stări multiple și tranziții bine definite, se va implementa un **sistem FSM simplificat**, bazat pe un dicționar central cu stările posibile și tranzițiile permise. Acesta va fi utilizat exclusiv în serviciile logice (`OfertaService`, `ContractService`, etc.), nu în modelele ORM sau în rutele FastAPI.
-
-- **Documentele generate vor fi declanșate doar din servicii**, nu din view-uri, nu automat la schimbarea statusului unui model.

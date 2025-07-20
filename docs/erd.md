@@ -4,270 +4,211 @@
 ```mermaid
 erDiagram
 
-  REFERAT ||--o{ CERERE_PRODUS_GENERIC : contine
-  REFERAT ||--o{ LOT_REFERAT : grupeaza
-  LOT_REFERAT ||--o{ CERERE_PRODUS_GENERIC : contine
-  LOT_REFERAT }o--|| REFERAT : parte_din
+  Relația cu utilizatorii - model Supabase
+  "auth.users" ||--o{ profiles : "are profil"
+  profiles ||--o{ Referat : "creează"
+  profiles ||--o{ AuditLog : "generează"
 
-  CERERE_PRODUS_GENERIC }o--|| PRODUS_GENERIC : specifica
-  PRODUS_GENERIC }o--o{ PRODUS_COMERCIAL : este_acoperit_de
+  Fluxul principal de la Referat la Procedură
+  Referat ||--o{ CerereProdusGeneric : "conține"
+  LotReferat ||--o{ CerereProdusGeneric : "grupează"
+  Referat ||--o{ LotReferat : "este detaliat în"
+  CerereProdusGeneric }|--|| ProdusGeneric : "specifică"
+  Procedura ||--o{ LotProcedura : "este compusă din"
+  LotProcedura ||--o{ CerereProdusGeneric : "include"
 
-  REFERAT }o--|| UTILIZATOR : creat_de
-  REFERAT ||--o{ DOCUMENT : atasament
+  Fluxul de Ofertare
+  Oferta ||--o{ OfertaItem : "conține"
+  Oferta }|--|| Furnizor : "transmisă de"
+  Oferta }o--|| Procedura : "răspunde la"
+  OfertaItem }|--|| ProdusComercial : "propune"
+  OfertaItem }o--|| LotProcedura : "ofertează pentru"
 
-  OFERTA ||--o{ OFERTA_ITEM : contine
-  OFERTA_ITEM }o--|| PRODUS_COMERCIAL : propune
-  OFERTA_ITEM }o--|| LOT_OFERTA : pentru_lot
-  LOT_OFERTA }o--|| OFERTA : parte_din
+  Fluxul de Contractare
+  Contract }|--|| Procedura : "rezultă din"
+  Contract }|--|| Furnizor : "semnat cu"
+  Contract ||--o{ Comanda : "se execută prin"
+  Contract ||--o{ ContractLot : "acoperă"
+  ContractLot }|--|| LotProcedura : "se referă la"
 
-  OFERTA ||--o{ OFERTA_DOCUMENT : are_documente
+  Fluxul de Comenzi și Livrări
+  Comanda ||--o{ ComandaItem : "conține"
+  ComandaItem }|--|| ProdusComercial : "comandă"
+  Livrare }|--|| Comanda : "onorează"
+  Livrare ||--o{ LivrareItem : "conține"
+  LivrareItem }|--|| ComandaItem : "livrează"
 
-  OFERTA }o--|| FURNIZOR : transmisa_de
+  Entități Suport
+  ProdusComercial ||--o{ EchivalentaProdusGeneric : "este echivalat prin"
+  ProdusGeneric ||--o{ EchivalentaProdusGeneric : "este echivalat cu"
+  Documente }o--|| Referat : "atașat la"
+  Documente }o--|| Oferta : "atașat la"
+  Documente }o--|| Contract : "atașat la"
+  Documente }o--|| Livrare : "atașat la"
 
-  PROCEDURA ||--o{ LOT_PROCEDURA : compusa_din
-  LOT_PROCEDURA }o--o{ CERERE_PRODUS_GENERIC : include
-  LOT_PROCEDURA }o--|| OFERTA : atribuita_la
-
-  CONTRACT }o--|| FURNIZOR : semnat_cu
-  CONTRACT }o--|| PROCEDURA : rezultat_din
-  CONTRACT ||--o{ COMANDA : include
-  CONTRACT ||--o{ DOCUMENT : are_documente
-
-  COMANDA ||--o{ COMANDA_PRODUS : contine
-  COMANDA_PRODUS }o--|| PRODUS_COMERCIAL : comanda_pentru
-
-  LIVRARE ||--o{ LIVRARE_ITEM : contine
-  LIVRARE_ITEM }o--|| COMANDA_PRODUS : raspunde_la
-  LIVRARE }o--|| COMANDA : parte_din
-
-  UTILIZATOR {
-    string id PK
-    string nume
-    string email
+  Entități pentru utilizatori - model Supabase
+  "auth.users" {
+      UUID id PK "Cheie primară din Supabase Auth"
+      string email
   }
 
-  REFERAT {
-    string id PK
-    string titlu
-    string status
-    datetime data_creare
-    datetime data_aprobare
+  profiles {
+      UUID id PK "Referință la auth.users.id"
+      TEXT nume_complet
+      TEXT rol "Ex: 'achizitor', 'admin'"
   }
 
-  CERERE_PRODUS_GENERIC {
-    string id PK
-    float cant_minima
-    float cant_maxima
+  Entități de business
+  Referat {
+      UUID id PK
+      UUID user_id FK "ID din profiles"
+      TEXT titlu
+      TEXT status
+      TIMESTAMPTZ created_at
   }
 
-  PRODUS_GENERIC {
-    string id PK
-    string cod
-    string nume
-    string specificatii
-    string categorie
-    string um
-  }
-  IMPORT_PRODUS_GENERIC {
-    string id PK
-    string sursa
-    string cale_fisier
-    datetime data_import
-    int numar_produse
-    string stare
+  LotReferat {
+      UUID id PK
+      UUID referat_id FK
+      TEXT nume
+      TEXT descriere
   }
 
-  PRODUS_COMERCIAL {
-    string id PK
-    string nume
-    string cod_catalog
-    string producator
-    string um_comerciala
-    float valoare_ambalaj
-    string um_referinta
-    float factor_conversie
-    string descriere
+  CerereProdusGeneric {
+      UUID id PK
+      UUID produs_generic_id FK
+      UUID lot_referat_id FK "Opțional, dacă e grupat"
+      UUID referat_id FK
+      NUMERIC cantitate
   }
 
-  FURNIZOR {
-    string id PK
-    string denumire
-    string cif
-    string email
+  ProdusGeneric {
+      UUID id PK
+      TEXT cod "Cod intern unic"
+      TEXT nume_generic
+      TEXT specificatii_tehnice
+      TEXT categorie
+      TEXT um "Unitate de măsură"
   }
 
-  OFERTA {
-    string id PK
-    datetime data_inregistrare
-    string tip
-    string link_document
-    string moneda
-    date valabil_pana
-    string status
-    datetime data_transmitere
-    string motiv_selectare
+  ProdusComercial {
+      UUID id PK
+      TEXT nume_comercial
+      TEXT producator
+      TEXT cod_catalog
+      TEXT um_comerciala
+      NUMERIC factor_conversie "Ex: 48 (reacții per kit)"
   }
 
-  OFERTA_ITEM {
-    string id PK
-    float pret_unitar
-    float cantitate
+  EchivalentaProdusGeneric {
+      UUID produs_generic_id PK,FK
+      UUID produs_comercial_id PK,FK
+      TEXT justificare
   }
 
-  LOT_OFERTA {
-    bool este_completa
+  Procedura {
+      UUID id PK
+      TEXT tip
+      TEXT status
+      TIMESTAMPTZ data_publicare
   }
 
-  PROCEDURA {
-    string id PK
-    string tip
-    string status
-    datetime data_publicare
+  LotProcedura {
+      UUID id PK
+      UUID procedura_id FK
+      TEXT denumire
   }
 
-  LOT_PROCEDURA {
-    string id PK
-    string denumire
-    string descriere
+  Furnizor {
+      UUID id PK
+      TEXT denumire
+      TEXT cif "Cod de Identificare Fiscală"
+      TEXT email
   }
 
-  LOT_REFERAT {
-    string id PK
-    string nume
-    string descriere
+  Oferta {
+      UUID id PK
+      UUID procedura_id FK
+      UUID furnizor_id FK
+      TEXT status
+      TEXT moneda
+      DATE valabil_pana
   }
 
-  CONTRACT {
-    string id PK
-    string tip
-    datetime data_semnare
-    date data_expirare
-    string numar_contract
-    string tip_procedura
-    string status
-    string document_link
-    date valabil_de_la
-    date valabil_pana
-  }
-  CONTRACT_LOT {
-    string id PK
-    string contract_id FK
-    string lot_procedura_id FK
-    float valoare
+  OfertaItem {
+      UUID id PK
+      UUID oferta_id FK
+      UUID produs_comercial_id FK
+      UUID lot_procedura_id FK
+      NUMERIC cantitate
+      NUMERIC pret_unitar
   }
 
-  COMANDA {
-    string id PK
-    datetime data_emiterii
-    string status
+  Contract {
+      UUID id PK
+      UUID procedura_id FK
+      UUID furnizor_id FK
+      TEXT tip "ferm sau acord-cadru"
+      TEXT numar_contract
+      DATE data_semnare
+      TEXT status
   }
 
-  COMANDA_PRODUS {
-    string id PK
-    float cantitate
+  ContractLot {
+      UUID contract_id PK,FK
+      UUID lot_procedura_id PK,FK
+      NUMERIC valoare
   }
 
-  LIVRARE {
-    string comanda_id FK
-    string observatii
-    datetime data_livrare
+  Comanda {
+      UUID id PK
+      UUID contract_id FK
+      TEXT numar_comanda
+      DATE data_emitere
+      TEXT status
   }
 
-LIVRARE_DOCUMENT {
-  string id PK
-  string livrare_id FK
-  string tip
-  string nume
-  string link
-}
-
-LIVRARE_ITEM {
-  string id PK
-  string livrare_id FK
-  string produs_comercial_id FK
-  float cantitate_livrata
-  float pret_unitar
-  date data_expirare
-  string lot_fabricatie
-  string observatii
-}
-
-  DOCUMENT {
-    string id PK
-    string tip
-    string cale_fisier
-    datetime data_upload
+  ComandaItem {
+      UUID id PK
+      UUID comanda_id FK
+      UUID produs_comercial_id FK
+      NUMERIC cantitate
+      NUMERIC pret_unitar
   }
 
-  ECHIVALENTA_PRODUS_GENERIC {
-    string id PK
-    string produs_generic_id FK
-    string produs_comercial_id FK
-    string justificare
+  Livrare {
+      UUID id PK
+      UUID comanda_id FK
+      DATE data_livrare
+      TEXT observatii
   }
 
-  FURNIZOR_PRODUS_COMERCIAL {
-    string id PK
-    string produs_comercial_id FK
-    string furnizor_id FK
-    string cod_catalog_furnizor
-    int termen_livrare_zile
+  LivrareItem {
+      UUID id PK
+      UUID livrare_id FK
+      UUID comanda_item_id FK "Trasabilitate la linia de comandă"
+      NUMERIC cantitate_livrata
+      DATE data_expirare "Opțional"
+      TEXT lot_fabricatie "Opțional"
   }
 
-  OFERTA_DOCUMENT {
-    string id PK
-    string oferta_id FK
-    string nume
-    string tip
-    string link_document
+  Entități de sistem
+  Documente {
+      UUID id PK
+      UUID entity_id "ID-ul entității părinte ex: referat_id"
+      TEXT entity_type "Tipul entității ex: 'Referat', 'Oferta'"
+      TEXT nume_fisier
+      TEXT cale_storage "Calea în Supabase Storage"
+      TEXT tip_mime
   }
 
-  ECHIVALENTA_PRODUS_GENERIC }o--|| PRODUS_COMERCIAL : echivalat_cu
-  ECHIVALENTA_PRODUS_GENERIC }o--|| PRODUS_GENERIC : echivaleaza
-
-  FURNIZOR_PRODUS_COMERCIAL }o--|| PRODUS_COMERCIAL : instanta
-  FURNIZOR_PRODUS_COMERCIAL }o--|| FURNIZOR : oferit_de
-  IMPORT_PRODUS_GENERIC ||--o{ PRODUS_GENERIC : contine
-  OFERTA }o--|| REFERAT : optional_pentru
-  OFERTA }o--|| PROCEDURA : optional_pentru
-  CONTRACT ||--o{ CONTRACT_LOT : acopera
-CONTRACT_LOT }o--|| LOT_PROCEDURA : parte_din
-
-  COMANDA_SUBSECVENTA {
-    string id PK
-    string contract_id FK
-    date data_emitere
-    string numar_comanda
-    string document_link
-    string status
-    string observatii
+  AuditLog {
+      UUID id PK
+      UUID user_id FK "ID din profiles"
+      TEXT actiune
+      TEXT entitate
+      UUID entitate_id
+      JSONB detalii "Snapshot înainte/după"
+      TIMESTAMPTZ created_at
   }
-
-  COMANDA_SUBSECVENTA_ITEM {
-    string id PK
-    string comanda_subsecventa_id FK
-    string produs_comercial_id FK
-    float cantitate
-    float pret_unitar
-  }
-
-  COMANDA_SUBSECVENTA }o--|| CONTRACT : apartine
-  COMANDA_SUBSECVENTA ||--o{ COMANDA_SUBSECVENTA_ITEM : contine
-  COMANDA_SUBSECVENTA_ITEM }o--|| PRODUS_COMERCIAL : pentru_produs
-
-LIVRARE ||--o{ LIVRARE_DOCUMENT : atasamente
-LIVRARE ||--o{ LIVRARE_ITEM : contine
-LIVRARE_ITEM }o--|| PRODUS_COMERCIAL : produs_livrat
-
-AUDIT_LOG {
-  string id PK
-  string utilizator_id FK
-  string actiune
-  string entitate
-  string entitate_id
-  datetime data_ora
-  string detalii
-}
-
-AUDIT_LOG }o--|| UTILIZATOR : generat_de
 ```
