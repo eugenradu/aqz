@@ -1,0 +1,20 @@
+[
+  {
+    "Categorie": "Biologie Moleculara",
+    "Unitate_Masura": "flacon 100ml",
+    "Nume_Generic": "Apă ultrapură, nuclease-free",
+    "Specificatii_Tehnice": "Grad biologie moleculară, pentru preparare reactivi PCR."
+  },
+  {
+    "Categorie": "Extracție Qia",
+    "Unitate_Masura": "kit",
+    "Nume_Generic": "Kit extracție ADN din țesut parafinat",
+    "Specificatii_Tehnice": "Kit bazat pe coloane de silica, optimizat pentru mostre FFPE.\nInclude liza cu Proteinaza K."
+  },
+  {
+    "Categorie": "Extracție Qia",
+    "Unitate_Masura": "flacon 50 mL",
+    "Nume_Generic": "Soluție deparafinare pentru extracția ADN",
+    "Specificatii_Tehnice": "Soluție de deparafinizare optimizată pentru tratarea secțiunilor la parafină.\nNu este necesară îndepărtarea supernatantului."
+  }
+]
